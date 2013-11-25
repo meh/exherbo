@@ -1,0 +1,23 @@
+require systemd-service
+
+export exlib_phases src_install
+
+SUMMARY="Elixir programming language"
+DESCRIPTION="Elixir is a metaprogrammable, functional language built atop the Erlang VM. It is a dynamic language with hygienic macros that leverages Erlang's ability to build concurrent, distributed, and fault-tolerant applications with hot code upgrades."
+HOMEPAGE="http://elixir-lang.org"
+DOWNLOADS="https://github.com/elixir-lang/elixir/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+
+LICENCES="Apache-2.0 EPL-1.1"
+SLOT="0"
+
+DEPENDENCIES="
+	build+run:
+		dev-lang/erlang
+"
+
+erlang_src_install() {
+	default
+
+	emake DESTDIR="${D}" LIBDIR="$(get_libdir)" PREFIX="/usr" install
+	dodoc README.md CHANGELOG.md CONTRIBUTING.md
+}
