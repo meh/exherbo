@@ -1,7 +1,7 @@
 diff --git a/src/ansi.c b/src/ansi.c
 index b68ebed..ebb33f9 100644
---- a/src/ansi.c
-+++ b/src/ansi.c
+--- src/ansi.c
++++ src/ansi.c
 @@ -69,6 +69,7 @@ struct mline mline_null;
  struct mchar mchar_null;
  struct mchar mchar_blank = { ' ', 0, 0, 0, 0, 0, 0 };
@@ -12,8 +12,8 @@ index b68ebed..ebb33f9 100644
  
 diff --git a/src/ansi.h b/src/ansi.h
 index 54b4c28..a85f10a 100644
---- a/src/ansi.h
-+++ b/src/ansi.h
+--- src/ansi.h
++++ src/ansi.h
 @@ -183,6 +183,7 @@ extern struct mline mline_blank;
  extern struct mline mline_null;
  extern struct mline mline_old;
@@ -24,8 +24,8 @@ index 54b4c28..a85f10a 100644
  extern struct mchar mchar_null;
 diff --git a/src/comm.c b/src/comm.c
 index 0744ff0..f211c16 100644
---- a/src/comm.c
-+++ b/src/comm.c
+--- src/comm.c
++++ src/comm.c
 @@ -48,6 +48,7 @@ struct comm comms[RC_LAST + 1] =
    { "autodetach",	ARGS_1,				{NULL} },
    { "autonuke",		NEED_DISPLAY|ARGS_1,		{NULL} },
@@ -36,8 +36,8 @@ index 0744ff0..f211c16 100644
    { "bell_msg",		ARGS_01,			{NULL} },
 diff --git a/src/display.c b/src/display.c
 index a8a9572..16ca5eb 100644
---- a/src/display.c
-+++ b/src/display.c
+--- src/display.c
++++ src/display.c
 @@ -1561,19 +1561,10 @@ static void RemoveStatusMinWait()
  static int strlen_onscreen(char *c, char *end)
  {
@@ -120,8 +120,8 @@ index a8a9572..16ca5eb 100644
  			if (from >= lvp->v_xe + 1)
 diff --git a/src/encoding.c b/src/encoding.c
 index 0b3f2d6..590853c 100644
---- a/src/encoding.c
-+++ b/src/encoding.c
+--- src/encoding.c
++++ src/encoding.c
 @@ -1504,3 +1504,39 @@ void LoadFontTranslationsForEncoding(int encoding)
  	if (f > 0 && recodetabs[f].flags == 0)
  		LoadFontTranslation(f, 0);
@@ -164,8 +164,8 @@ index 0b3f2d6..590853c 100644
 +}
 diff --git a/src/encoding.h b/src/encoding.h
 index 76859cd..2cee9a5 100644
---- a/src/encoding.h
-+++ b/src/encoding.h
+--- src/encoding.h
++++ src/encoding.h
 @@ -2,6 +2,8 @@
  #define SCREEN_ENCODING_H
  
@@ -185,8 +185,8 @@ index 76859cd..2cee9a5 100644
  #endif /* SCREEN_ENCODING_H */
 diff --git a/src/process.c b/src/process.c
 index 1ed90eb..16f5e4e 100644
---- a/src/process.c
-+++ b/src/process.c
+--- src/process.c
++++ src/process.c
 @@ -3444,6 +3444,18 @@ void DoAction(struct action *act, int key)
  		}
  		WindowChanged(0, '`');
@@ -208,8 +208,8 @@ index 1ed90eb..16f5e4e 100644
  			RunBlanker(blankerprg);
 diff --git a/src/screen.c b/src/screen.c
 index bc2a538..b0c2a36 100644
---- a/src/screen.c
-+++ b/src/screen.c
+--- src/screen.c
++++ src/screen.c
 @@ -1528,6 +1528,7 @@ void PutWinMsg(char *s, int start, int max)
  			if (n > max)
  				n = max;
@@ -220,8 +220,8 @@ index bc2a538..b0c2a36 100644
  				if (start-- > 0)
 diff --git a/src/winmsg.c b/src/winmsg.c
 index 41dfea5..ca95c50 100644
---- a/src/winmsg.c
-+++ b/src/winmsg.c
+--- src/winmsg.c
++++ src/winmsg.c
 @@ -41,6 +41,7 @@
  #include "process.h"
  #include "sched.h"
