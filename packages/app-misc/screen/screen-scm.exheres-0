@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 SCM_BRANCH="master"
-SCM_REPOSITORY="git://git.sv.gnu.org/screen.git"
+SCM_REPOSITORY="http://git.savannah.gnu.org/r/screen.git"
 WORK="${WORKBASE}/${PNV}/src"
 
 require scm-git screen
