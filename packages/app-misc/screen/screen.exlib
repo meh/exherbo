@@ -23,7 +23,6 @@ DEPENDENCIES="
 "
 
 DEFAULT_SRC_PREPARE_PATCHES=(
-    "${FILES}"/${PN}-4.3.0-do-not-link-against-libelf.patch
     "${FILES}"/cute.patch
 )
 
