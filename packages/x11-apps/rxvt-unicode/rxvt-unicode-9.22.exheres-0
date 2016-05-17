@@ -53,7 +53,6 @@ DEFAULT_SRC_CONFIGURE_PARAMS=(
     "--with-codesets=all"
     "--with-terminfo=/usr/share/terminfo"
     "--disable-wtmp"
-    "--disable-utmp"
     "--disable-lastlog"
 )
 
