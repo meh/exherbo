@@ -1,0 +1,68 @@
+# Copyright 2008 Anders Ossowicki <arkanoid@exherbo.org>
+# Copyright 2012-2016 Wouter van Kesteren <woutershep@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+SUMMARY="Clone of rxvt with support for unicode and xft"
+DESCRIPTION="rxvt-unicode (binary name urxvt) is a modern clone of rxvt
+with several additional features. rxvt-unicode comes with a daemon mode,
+embedded perl for endless customization and improvement opportunities,
+regex-driven customisable selection that can properly select shell arguments,
+urls, etc and much more."
+HOMEPAGE="http://software.schmorp.de/pkg/rxvt-unicode.html"
+DOWNLOADS="http://dist.schmorp.de/rxvt-unicode/Attic/${PNV}.tar.bz2"
+
+LICENCES="GPL-2"
+SLOT="0"
+PLATFORMS="~amd64 ~arm ~x86"
+MYOPTIONS="
+    gdk-pixbuf [[ description = [ Use GDK Pixbuf for background image processing/drawing ] ]]
+    perl       [[ description = [ Include an embedded perl interpreter ] ]]
+    startup-notification
+    xim        [[ description = [ Add support for the X Input Method server ] ]]
+"
+
+# all they do is generate the docs for a second time ...
+RESTRICT="test"
+
+DEPENDENCIES="
+    build:
+        x11-proto/renderproto
+        x11-proto/xextproto
+    build+run:
+        media-libs/fontconfig
+        sys-libs/ncurses
+        x11-libs/libICE
+        x11-libs/libSM
+        x11-libs/libX11
+        x11-libs/libXext
+        x11-libs/libXft
+        x11-libs/libXmu
+        x11-libs/libXrender
+        gdk-pixbuf? ( x11-libs/gdk-pixbuf:2.0 )
+        perl? ( dev-lang/perl:=[>=5.8] )
+        startup-notification? ( x11-libs/startup-notification )
+    suggestion:
+        perl? ( x11-plugins/urxvt-perls )
+"
+
+DEFAULT_SRC_CONFIGURE_PARAMS=(
+    "--enable-256-color"
+    "--enable-everything"
+    "--enable-unicode3"
+    "--enable-xft"
+    "--with-codesets=all"
+    "--with-terminfo=/usr/share/terminfo"
+    "--disable-wtmp"
+    "--disable-utmp"
+    "--disable-lastlog"
+)
+
+DEFAULT_SRC_CONFIGURE_OPTION_ENABLES=( 'gdk-pixbuf pixbuf' perl startup-notification xim )
+
+DEFAULT_SRC_INSTALL_PARAMS=( TERMINFO="${IMAGE}"/usr/share/terminfo )
+
+DEFAULT_SRC_INSTALL_EXTRA_DOCS=(
+    "doc/etc/rxvt-unicode.termcap"
+    "doc/etc/rxvt-unicode.terminfo"
+)
+
