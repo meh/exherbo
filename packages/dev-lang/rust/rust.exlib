@@ -1,0 +1,91 @@
+# Distributed under the terms of the GNU General Public License v2
+
+export_exlib_phases src_unpack src_prepare src_configure src_install
+
+# Get these from src/snapshots.txt
+myexparam date=
+exparam -v RUST_DATE date
+myexparam rev=
+exparam -v RUST_REV rev
+myexparam hash=
+exparam -v RUST_HASH hash
+
+SUMMARY="A safe, concurrent, practical language"
+DESCRIPTION="Rust is a curly-brace, block-structured expression language. It visually resembles the C language
+family, but differs significantly in syntactic and semantic details. Its design is oriented toward
+concerns of “programming in the large”, that is, of creating and maintaining boundaries – both
+abstract and operational – that preserve large-system integrity, availability and concurrency."
+SNAPSHOT="${PN}-stage0-${RUST_DATE}-${RUST_REV}-linux-x86_64-${RUST_HASH}"
+DOWNLOADS="
+    http://static.rust-lang.org/stage0-snapshots/${SNAPSHOT}.tar.bz2
+    http://static.rust-lang.org/dist/${PN}c-${PV}-src.tar.gz
+"
+
+HOMEPAGE="http://www.rust-lang.org/"
+LICENCES="MIT Apache-2.0"
+SLOT="0"
+MYOPTIONS="doc"
+
+DEPENDENCIES="
+    build:
+        dev-lang/perl:*[>=5.0]
+        dev-lang/python:2.7
+        sys-devel/gcc:*[>=4.4]
+        sys-devel/make[>=3.82]
+"
+
+WORK="${WORKBASE}/${PN}c-${PV}"
+
+# Tests need gdb which does not work under sydbox
+RESTRICT="test"
+
+rust_src_unpack() {
+    default
+
+    edo mkdir "${WORK}/dl"
+    edo cp "${FETCHEDDIR}/${SNAPSHOT}.tar.bz2" "${WORK}/dl/"
+}
+
+rust_src_prepare() {
+    local target=$(exhost --target)
+
+    # rust embeds several dependencies with hardcoded calls to unprefixed tools
+    # This is mostly copied from chromium.exlib
+    local dir=${WORKBASE}/symlinked-build-tools
+    edo mkdir -p ${dir}
+    edo ln -s /usr/${target}/bin/${target}-pkg-config ${dir}/pkg-config
+    edo ln -s /usr/${target}/bin/${target}-ar ${dir}/ar
+    edo ln -s /usr/${target}/bin/${target}-gcc ${dir}/gcc
+    edo ln -s /usr/${target}/bin/${target}-cc ${dir}/cc
+    edo ln -s /usr/${target}/bin/${target}-ld ${dir}/ld
+    export PATH="${PATH}:${dir}"
+
+    edo sed -e 's:bin/FileCheck:libexec/llvm/FileCheck:' -i configure
+
+    default
+}
+
+# Rust's configure script rejects every standard option
+rust_src_configure() {
+    local target=$(exhost --target)
+    local channel=stable
+
+    edo ./configure                             \
+        --target=${target/pc/unknown}           \
+        --prefix=/usr/${target}                 \
+        --datadir=/usr/share                    \
+        --mandir=/usr/share/man                 \
+        --default-linker=${CC}                  \
+        --default-ar=${AR}                      \
+        --release-channel=${channel}            \
+        --musl-root=/usr/x86_64-pc-linux-musl/  \
+        --disable-llvm-assertions               \
+        $(option_enable doc docs)
+}
+
+rust_src_install() {
+    default
+    edo mv "${IMAGE}"/usr/$(exhost --target)/share/doc/${PN}/* "${IMAGE}"/usr/share/doc/${PNVR}
+    edo rmdir "${IMAGE}"/usr/$(exhost --target)/share{/doc{/${PN},},}
+    option doc && edo rmdir "${IMAGE}"/usr/share/doc/${PNVR}/html/extra
+}
