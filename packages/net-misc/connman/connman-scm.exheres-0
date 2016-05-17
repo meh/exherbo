@@ -1,0 +1,14 @@
+# Copyright 2011 Ali Polatel <alip@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+SCM_REPOSITORY="git://git.kernel.org/pub/scm/network/connman/connman.git"
+require connman scm-git
+
+PLATFORMS="~amd64"
+
+src_prepare() {
+    default
+
+    edo ./bootstrap
+}
+

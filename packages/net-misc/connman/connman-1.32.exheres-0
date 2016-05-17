@@ -1,0 +1,9 @@
+# Copyright 2011, 2012 Ali Polatel <alip@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require connman
+
+DOWNLOADS="mirror://kernel/linux/network/${PN}/${PNV}.tar.xz"
+
+PLATFORMS="~amd64 ~armv7 ~x86"
+

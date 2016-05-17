@@ -1,0 +1,124 @@
+# Copyright 2009 Jonathan Dahan <jedahan@gmail.com>
+# Copyright 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+# Copyright 2014 Vasiliy Tolstov <v.tolstov@selfip.ru>
+# Based in part upon 'connman-0.47.ebuild', which is:
+#   Copyright 1999-2009 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+require toolchain-funcs flag-o-matic
+require option-renames [ renames=[ 'policykit polkit' ] ] systemd-service
+require autotools [ supported_autoconf=[ 2.5 ] supported_automake=[ 1.15 ] ]
+
+export_exlib_phases src_prepare src_install
+
+SUMMARY="Provides a daemon for managing internet connections"
+DESCRIPTION="
+The ConnMan project provides a daemon for managing internet connections within
+embedded devices running the Linux operating system. The Connection Manager is
+designed to be slim and to use as few resources as possible, so it can be
+easily integrated. It is a fully modular system that can be extended, through
+plug-ins, to support all kinds of wired or wireless technologies. Also,
+configuration methods, like DHCP and domain name resolving, are implemented
+using plug-ins. The plug-in approach allows for easy adaption and modification
+for various use cases.
+"
+HOMEPAGE="https://01.org/${PN}"
+
+BUGS_TO="alip@exherbo.org"
+
+LICENCES="GPL-2"
+SLOT="0"
+MYOPTIONS="
+    bluetooth
+    debug
+    nmcompat    [[ description = [ Enable NetworkManager emulation ] ]]
+    openconnect [[ description = [ Allow connman to manage OpenConnect ] ]]
+    openvpn     [[ description = [ Allow connman to manage OpenVPN ] ]]
+    polkit
+    vpnc
+    wifi
+    wispr       [[ description = [ Add support for detecting WISPr based Wifi hotspots ] ]]
+"
+
+# tests want to access /dev/log
+RESTRICT="test"
+
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        dev-libs/glib:2[>=2.28]
+        net-firewall/iptables[>=1.4.11]
+        sys-apps/dbus[>=1.4]
+        bluetooth? ( net-wireless/bluez )
+        openconnect? ( net-apps/openconnect )
+        openvpn? ( net-misc/openvpn[>=2.2] )
+        polkit? ( sys-auth/polkit:1 )
+        vpnc? ( net-apps/vpnc )
+        wifi? ( net-wireless/wpa_supplicant[dbus] )
+        wispr? ( dev-libs/gnutls )
+"
+
+DEFAULT_SRC_CONFIGURE_PARAMS=(
+    ac_cv_path_IPTABLES_SAVE=/usr/$(exhost --target)/bin/iptables-save
+    --localstatedir=/var
+    --enable-client
+    --enable-datafiles
+    --enable-ethernet
+    --enable-loopback=builtin
+    --enable-tools
+    --disable-gadget
+    --disable-hh2serial-gps
+    --disable-iospm
+    --disable-l2tp
+    --disable-neard
+    --disable-ofono
+    --disable-openconnect
+    --disable-pacrunner
+    --disable-pptp
+    --disable-selinux
+    --disable-test
+    --disable-tist
+    --disable-wispr
+    --with-systemdunitdir=${SYSTEMDSYSTEMUNITDIR}
+)
+DEFAULT_SRC_CONFIGURE_OPTION_ENABLES=(
+    bluetooth
+    'bluetooth dundee'
+    debug
+    nmcompat
+    openconnect
+    openvpn
+    polkit
+    vpnc
+    wifi
+    wispr
+)
+
+connman_src_prepare() {
+    edo sed -e "s/actiondir polkit/actiondir polkit-gobject-1/" \
+            -i configure.ac
+
+    autotools_src_prepare
+}
+
+connman_src_install() {
+    default
+
+    # Default STORAGE directory:
+    keepdir /var/lib/${PN}
+    keepdir /var/lib/${PN}-vpn
+
+    dobin client/connmanctl
+
+    insinto /etc/connman
+    insopts -m0644
+
+    # TODO doins vpn/connman-vpn.conf , but it not exists in tarball
+    doins src/main.conf
+
+    if ! option openvpn && ! option vpnc; then
+        edo rm -rf "${IMAGE}"/usr/$(exhost --target)/lib/${PN}
+    fi
+}
+
