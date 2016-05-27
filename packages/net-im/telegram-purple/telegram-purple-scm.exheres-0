@@ -1,0 +1,14 @@
+SCM_REPOSITORY="https://github.com/majn/telegram-purple"
+SCM_SECONDARY_REPOSITORIES="tgl"
+SCM_EXTERNAL_REFS="tgl:"
+
+SCM_tgl_REPOSITORY="https://github.com/majn/tgl"
+SCM_tgl_SECONDARY_REPOSITORIES="tl-parser"
+SCM_tgl_UNPACK_TO="${WORK}/${PN}-${PV}/tgl"
+
+SCM_tl_parser_REPOSITORY="https://github.com/vysheng/tl-parser"
+SCM_tl_parser_UNPACK_TO="${WORK}/${PN}-${PV}/tgl/tl-parser"
+
+require scm-git telegram-purple
+
+PLATFORMS="~amd64 ~x86"

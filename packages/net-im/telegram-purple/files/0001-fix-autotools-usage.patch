@@ -1,0 +1,27 @@
+From 1286e3dfcad870ead14388ba90da8cf7d64db33f Mon Sep 17 00:00:00 2001
+From: meh <meh@schizofreni.co>
+Date: Fri, 27 May 2016 21:09:54 +0200
+Subject: [PATCH] Fix autotools usage
+
+---
+ configure.ac | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index b3f3f0d..7d4217b 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -24,10 +24,6 @@ AC_INIT([telegram-purple], [1.2.6])
+ AC_CONFIG_SRCDIR([config.h.in])
+ AC_CONFIG_HEADERS([config.h])
+ 
+-m4_include([m4_ax_check_openssl.m4])
+-m4_include([m4_ax_check_zlib.m4])
+-m4_include([m4_ax_pkg_config.m4])
+-
+ # Checks for programs.
+ AC_PROG_CC
+ AC_PROG_INSTALL
+-- 
+2.8.3
+
