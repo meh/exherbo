@@ -1,0 +1,127 @@
+# Copyright 2009 Anders Ossowicki <arkanoid@exherbo.org>
+# Copyright 2010-2016 Wulf C. Krueger <philantrop@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require systemd-service
+require github [ pn=bitlbee ]
+
+export_exlib_phases src_prepare src_configure src_compile src_install
+
+SUMMARY="An IRC to other chat networks gateway"
+DESCRIPTION="BitlBee brings IM (instant messaging) to IRC clients. It's a great
+solution for people who have an IRC client running all the time and don't want
+to run an additional MSN/AIM/whatever client. BitlBee currently supports the
+following IM networks/protocols: XMPP/Jabber (including Google Talk), MSN
+Messenger, Yahoo! Messenger, AIM and ICQ."
+HOMEPAGE="http://bitlbee.org"
+
+BUGS_TO="arkanoid@exherbo.org philantrop@exherbo.org"
+REMOTE_IDS="freecode:bitlbee"
+
+UPSTREAM_DOCUMENTATION="http://bitlbee.org/main.php/extdoc.html"
+UPSTREAM_CHANGELOG="http://bitlbee.org/main.php/changelog.html"
+
+LICENCES="GPL-2 GPL-3"
+SLOT="0"
+
+MYOPTIONS="
+    (
+        msn [[ description = [ Support for the MSN Messenger chat protocol ] ]]
+        jabber [[ description = [ Support for the jabber/XMPP protocol ] ]]
+        oscar [[ description = [ Support for the OSCAR (AOL) chat protocol ] ]]
+        purple [[ description = [ Use pidgin's libpurple instead of the built-in code ] ]]
+        yahoo [[ description = [ Support for the Yahoo chat protocol ] ]]
+    ) [[ number-selected = at-least-one ]]
+    otr [[ description = [ Support for Off-the-Record Messaging ] ]]
+"
+
+DEPENDENCIES="
+    build:
+        app-doc/asciidoc
+        app-text/xmlto
+        dev-libs/libxslt
+        virtual/pkg-config
+    build+run:
+        user/bitlbee
+        dev-libs/glib:2[>=2.16]
+        dev-libs/gnutls[>=2.8]
+        otr? ( net-libs/libotr[>=4.0] )
+        purple? ( net-im/pidgin[ssl] )
+"
+
+bitlbee_src_prepare() {
+    default
+
+    # Enable verbose output. Upstream rejected a patch for this.
+    for makefile in $(find . -type f -name "Makefile"); do
+        edo sed -i -e '/@echo '*'/d' ${makefile}
+        edo sed -i -e 's:@$(CC):$(CC):g' ${makefile}
+        edo sed -i -e 's:@$(LD):$(LD):g' ${makefile}
+    done
+
+    edo sed -i -e "s:pkg-config:$(exhost --tool-prefix)&:g" configure doc/example_plugin.c tests/Makefile
+}
+
+bitlbee_src_configure() {
+    local im myconf=( --plugins=1 --ssl=gnutls )
+
+    for im in msn jabber oscar yahoo purple ; do
+        if option ${im}; then
+            myconf+=( --${im}=1 )
+        else
+            myconf+=( --${im}=0 )
+        fi
+    done
+
+    if option otr; then
+        myconf+=( --otr=plugin )
+    fi
+
+    myconf+=( --systemdsystemunitdir=${SYSTEMDSYSTEMUNITDIR} )
+
+    edo ./configure \
+        --prefix=/usr \
+        --bindir=/usr/$(exhost --target)/bin \
+        --sbindir=/usr/$(exhost --target)/bin \
+        --includedir=/usr/$(exhost --target)/include/bitlbee \
+        --mandir=/usr/share/man \
+        --datadir=/usr/share/doc/${PNVR} \
+        --etcdir=/etc/bitlbee \
+        --ipcsocket=/run/bitlbee.sock \
+        --pidfile=/run/bitlbee.pid \
+        --plugindir=/usr/$(exhost --target)/lib/bitlbee \
+        --strip=0 \
+        --doc=1 \
+        "${myconf[@]}"
+}
+
+bitlbee_src_compile() {
+    default
+
+    edo "${CC}" ${CFLAGS} -o bitlbeed utils/bitlbeed.c
+}
+
+bitlbee_src_install() {
+    default
+
+    # Install sample configuration + motd
+    emake DESTDIR="${IMAGE}" install-etc
+
+    # Install headers and a pkgconfig file used by plugins to build
+    # against bitlbee
+    emake DESTDIR="${IMAGE}" PCDIR="/usr/$(exhost --target)/lib/pkgconfig/" install-dev
+
+    # Install the systemd service
+    emake DESTDIR="${IMAGE}" PCDIR="/usr/$(exhost --target)/lib/pkgconfig/" install-systemd
+
+    # Install the forking bitlbee daemon
+    insinto /usr/$(exhost --target)/bin
+    doins bitlbeed
+    edo chmod 755 "${IMAGE}"/usr/$(exhost --target)/bin/bitlbeed
+
+    # Bitlbee needs this to save user configuration
+    edo mkdir -p "${IMAGE}"/var/lib/bitlbee
+    keepdir /var/lib/bitlbee
+    edo chown bitlbee:bitlbee "${IMAGE}"/var/lib/bitlbee
+}
+
