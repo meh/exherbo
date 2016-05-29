@@ -3,7 +3,6 @@
 # Distributed under the terms of the GNU General Public License v2
 
 require systemd-service
-require github [ pn=bitlbee ]
 
 export_exlib_phases src_prepare src_configure src_compile src_install
 

@@ -1,14 +1,10 @@
-# Copyright 2009 Anders Ossowicki <arkanoid@exherbo.org>
+# Copyright 2016 meh.
 # Distributed under the terms of the GNU General Public License v2
 
-SNAPSHOT=
-
+require github [ user=bitlbee ]
 require bitlbee
 
 PLATFORMS="~amd64 ~x86"
-
-SCM_BRANCH="master"
-SCM_REPOSITORY="https://github.com/bitlbee/bitlbee.git"
 
 # The tests themselves have been broken since 3.0. Last checked: 3.4.1
 RESTRICT="test"
