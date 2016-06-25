@@ -1,0 +1,31 @@
+# Copyright 2012 Benedikt Morbach <benedikt.morbach@googlemail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require github [ user=rkitover ]
+
+SUMMARY="Use vim as a pager. Can also display man pages, perldocs and python documentation" 
+
+HOMEPAGE="http://www.vim.org/scripts/script.php?script_id=1723"
+DOWNLOADS=""
+
+# FIXME
+LICENCES="vim"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    run:
+        app-editors/vim[-vim-pager]
+"
+
+DEFAULT_SRC_INSTALL_PARAMS=( PREFIX=/usr/$(exhost --target) )
+
+src_prepare() {
+    default
+
+    # We don't want to depend on pandoc just to regenerate those
+    edo touch vimpager.1 README
+    edo sed -e 's#/man/man1#/share/man/man1#g' -i Makefile
+}
+
