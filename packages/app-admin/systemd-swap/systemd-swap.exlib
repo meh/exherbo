@@ -1,0 +1,10 @@
+export_exlib_phases src_install
+
+SUMMARY="Script for creating hybrid swap space from zram swaps, swap files and swap partitions."
+
+LICENCES="GPL-3"
+
+systemd-swap_src_install() {
+    default
+    edo ./install.sh PREFIX="${IMAGE}"
+}

@@ -1,0 +1,6 @@
+SCM_BRANCH="master"
+SCM_REPOSITORY="https://github.com/Nefelim4ag/systemd-swap.git"
+
+require scm-git systemd-swap
+
+PLATFORMS="~amd64 ~arm ~x86"
