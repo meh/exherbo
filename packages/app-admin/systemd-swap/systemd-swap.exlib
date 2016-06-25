@@ -4,6 +4,10 @@ SUMMARY="Script for creating hybrid swap space from zram swaps, swap files and s
 
 LICENCES="GPL-3"
 
+DEFAULT_SRC_PREPARE_PATCHES=(
+    "${FILES}/install.patch"
+)
+
 systemd-swap_src_install() {
     default
     edo ./install.sh PREFIX="${IMAGE}"
