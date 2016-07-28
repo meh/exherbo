@@ -22,10 +22,6 @@ DEPENDENCIES="
         sys-libs/pam
 "
 
-DEFAULT_SRC_PREPARE_PATCHES=(
-    "${FILES}"/cute.patch
-)
-
 DEFAULT_SRC_CONFIGURE_PARAMS=(
     --hates=docdir
     --enable-colors256
