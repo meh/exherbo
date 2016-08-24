@@ -1,0 +1,6 @@
+# Copyright 2016 meh. <meh@schizofreni.co>
+# Distributed under the terms of the GNU General Public License v2
+
+require gbdfed
+
+PLATFORMS="x86 amd64"
