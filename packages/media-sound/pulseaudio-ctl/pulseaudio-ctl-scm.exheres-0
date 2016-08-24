@@ -1,0 +1,9 @@
+# Copyright 2016 meh. <meh@schizofreni.co>
+# Distributed under the terms of the GNU General Public License v2
+
+SCM_REPOSITORY="https://github.com/graysky2/pulseaudio-ctl"
+WORK="${WORKBASE}/${PNV}"
+
+require scm-git pulseaudio-ctl
+
+PLATFORMS="~amd64 ~arm ~x86"

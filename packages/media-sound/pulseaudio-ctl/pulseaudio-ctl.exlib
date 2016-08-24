@@ -1,0 +1,20 @@
+# Copyright 2016 meh. <meh@schizofreni.co>
+# Distributed under the terms of the GNU General Public License v2
+
+export_exlib_phases src_install
+
+SUMMARY="Control pulseaudio volume from the shell or mapped to keyboard shortcuts."
+
+LICENCES="MIT"
+SLOT="0"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build+run:
+        sys-apps/bc
+        media-sound/pulseaudio[>=4.0]
+"
+
+pulseaudio-ctl_src_install() {
+    emake PREFIX="${IMAGE}/usr/$(exhost --target)" install
+}
