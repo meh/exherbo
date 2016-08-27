@@ -1,0 +1,6 @@
+SCM_REPOSITORY="https://bitbucket.org/gsauthof/tstime"
+
+require scm-hg tstime
+
+PLATFORMS="~amd64 ~arm ~x86"
+

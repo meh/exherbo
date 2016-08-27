@@ -1,0 +1,13 @@
+export_exlib_phases src_install
+
+SUMMARY="Measure run time and memory usage through Linux taskstats API"
+
+LICENCES="GPL-2"
+SLOT="0"
+
+tstime_src_install() {
+    exeinto "/usr/$(exhost --target)/bin"
+    doexe tslog
+    doexe tsmon
+    doexe tstime
+}
