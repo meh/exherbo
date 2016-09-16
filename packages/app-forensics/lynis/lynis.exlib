@@ -1,0 +1,27 @@
+export_exlib_phases src_install
+
+SUMMARY="Security and system auditing tool"
+HOMEPAGE="http://cisofy.com/lynis/"
+
+LICENCES="GPL-3"
+SLOT="0"
+
+DOWNLOADS="http://cisofy.com/files/${PN}-${PV}.tar.gz"
+WORK="${WORKBASE}/lynis"
+
+lynis_src_install() {
+    exeinto "/usr/$(exhost --target)/bin"
+    doexe lynis
+
+    doman lynis.8
+    dodoc FAQ README
+
+    diropts -m0700
+    insopts -m0600
+
+    insinto "/usr/share/${PN}"
+    doins -r db/ include/ plugins/
+
+    insinto "/etc/${PN}"
+    doins default.prf
+}
