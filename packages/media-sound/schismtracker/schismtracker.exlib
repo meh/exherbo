@@ -1,0 +1,11 @@
+require pam autotools [ supported_autoconf=[ 2.5 ] supported_automake=[ 1.15 ] ]
+
+SUMMARY="an oldschool sample-based music composition tool"
+
+LICENCES="GPL-2"
+SLOT="0"
+
+DEPENDENCIES="
+    build+run:
+        media-libs/SDL
+"

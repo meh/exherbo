@@ -1,0 +1,6 @@
+SCM_REPOSITORY="http://github.com/schismtracker/schismtracker"
+
+require scm-git schismtracker
+
+PLATFORMS="~amd64 ~arm ~x86"
+
