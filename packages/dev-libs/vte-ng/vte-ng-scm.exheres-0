@@ -1,0 +1,65 @@
+# Copyright (C) 2008 Stephen Bennett <spb@exherbo.org>
+# Copyright (C) 2008 Saleem Abdulrasool <compnerd@compnerd.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require flag-o-matic
+require autotools [ supported_autoconf=[ 2.5 ] supported_automake=[ 1.15 ] ]
+
+SCM_REPOSITORY="https://github.com/thestinger/vte-ng"
+SCM_BRANCH="0.44.1b-ng"
+require scm-git vala [ vala_dep=true ]
+
+SUMMARY="A terminal emulator widget"
+HOMEPAGE="http://developer.gnome.org/arch/gnome/widgets/vte.html"
+
+LICENCES="GPL-2"
+SLOT="2.91"
+PLATFORMS="~amd64 ~x86"
+MYOPTIONS="gnutls pcre2 gobject-introspection gtk-doc
+    vapi [[ requires = gobject-introspection ]]
+    ( linguas: am ang ar as ast az be be@latin bg bn bn_IN bs ca ca@valencia cs cy da de dz el en_CA
+               en_GB en@shaw eo es et eu fa fi fr fur ga gl gu he hi hr hu id is it ja ka kn ko ku ky
+               li lt lv mai mi mk ml mn mr ms nb nds ne nl nn oc or pa pl pt pt_BR ro ru rw si sk sl
+               sq sr sr@latin sv ta te th tr ug uk uz@cyrillic vi wa xh zh_CN zh_HK zh_TW )
+"
+
+DEPENDENCIES="
+    build:
+        app-doc/gtk-doc-autotools
+        dev-util/intltool[>=0.40.0]
+        virtual/pkg-config[>=0.19]
+        gtk-doc? ( dev-doc/gtk-doc[>=1.13] )
+    build+run:
+        !dev-libs/vte [[
+            description = [ vte-ng is a fancier version ]
+            resolution = uninstall-blocked-after
+        ]]
+        dev-libs/glib:2[>=2.40.0]
+        gnome-desktop/gobject-introspection:1[>=0.9.0]
+        sys-libs/zlib
+        x11-libs/gtk+:3[>=3.16.0][gobject-introspection?]
+        x11-libs/pango[>=1.22.0][gobject-introspection?]
+        gnutls? ( dev-libs/gnutls[>=3.2.7] )
+        pcre2? ( dev-libs/pcre2 )
+"
+
+# TODO: pcre2 support
+DEFAULT_SRC_CONFIGURE_PARAMS=( '--disable-deprecation' )
+DEFAULT_SRC_CONFIGURE_OPTION_WITHS=( 'gnutls' 'pcre2' )
+DEFAULT_SRC_CONFIGURE_OPTION_ENABLES=( 'gtk-doc' 'gobject-introspection introspection' 'vapi vala' )
+
+pkg_setup() {
+    # NOTE(somasis): fix build on musl libc
+    append-flags -Wno-error=format
+}
+
+src_prepare() {
+    edo gtkdocize --copy
+    autotools_src_prepare
+    edo intltoolize --copy --force --automake
+
+    # Respect datarootdir
+    edo sed -e 's:itlocaledir = $(prefix)/$(DATADIRNAME)/locale:itlocaledir = $(datarootdir)/locale:' \
+        -i "${WORK}"/po/Makefile.in.in
+}
+
