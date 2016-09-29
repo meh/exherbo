@@ -2,6 +2,9 @@
 # Copyright 2012-2016 Wouter van Kesteren <woutershep@gmail.com>
 # Distributed under the terms of the GNU General Public License v2
 
+SCM_REPOSITORY=":pserver:anonymous@cvs.schmorp.de/schmorpforge"
+require scm-cvs
+
 SUMMARY="Clone of rxvt with support for unicode and xft"
 DESCRIPTION="rxvt-unicode (binary name urxvt) is a modern clone of rxvt
 with several additional features. rxvt-unicode comes with a daemon mode,
@@ -9,7 +12,6 @@ embedded perl for endless customization and improvement opportunities,
 regex-driven customisable selection that can properly select shell arguments,
 urls, etc and much more."
 HOMEPAGE="http://software.schmorp.de/pkg/rxvt-unicode.html"
-DOWNLOADS="http://dist.schmorp.de/rxvt-unicode/Attic/${PNV}.tar.bz2"
 
 LICENCES="GPL-2"
 SLOT="0"
