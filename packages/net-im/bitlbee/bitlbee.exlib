@@ -45,7 +45,7 @@ DEPENDENCIES="
         dev-libs/glib:2[>=2.16]
         dev-libs/gnutls[>=2.8]
         otr? ( net-libs/libotr[>=4.0] )
-        purple? ( net-im/pidgin[ssl] )
+        purple? ( net-im/pidgin )
 "
 
 bitlbee_src_prepare() {
