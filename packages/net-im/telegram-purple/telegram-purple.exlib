@@ -13,7 +13,7 @@ DEPENDENCIES="
         virtual/pkg-config
 
     build+run:
-        net-im/pidgin[ssl]
+        net-im/pidgin
         sys-libs/zlib
 
         providers:gcrypt? ( dev-libs/libgcrypt )
