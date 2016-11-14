@@ -105,27 +105,6 @@ vim_src_prepare() {
     echo '#define SYS_VIMRC_FILE "/etc/vim/vimrc"' >> "${WORK}"/src/feature.h
     echo '#define SYS_GVIMRC_FILE "/etc/vim/gvimrc"' >> "${WORK}"/src/feature.h
 
-    # Use exuberant ctags which installs as /usr/bin/exuberant-ctags.
-    # Hopefully this pattern won't break for a while at least.
-    # This fixes bug 29398 (27 Sep 2003 agriffis)
-    #sed -i 's/\<ctags\("\| [-*.]\)/exuberant-&/g' \
-    #   "${WORK}"/runtime/doc/syntax.txt \
-    #   "${WORK}"/runtime/doc/tagsrch.txt \
-    #   "${WORK}"/runtime/doc/usr_29.txt \
-    #   "${WORK}"/runtime/menu.vim \
-    #   "${WORK}"/src/configure.in || die 'exuberant-ctags sed failed'
-
-    # Don't be fooled by /usr/include/libc.h.  When found, vim thinks
-    # this is NeXT, but it's actually just a file in dev-libs/9libs
-    # This fixes bug 43885 (20 Mar 2004 agriffis)
-    #sed -i 's/ libc\.h / /' "${WORK}"/src/configure.in || die 'libc.h sed failed'
-
-    # GCC 4.6.0 miscompiles vim with -D_FORTIFY_SOURCE=1, which gets forced by
-    # the configure script for any gcc with major version 4 (to work around
-    # a bug that occurs when -D_FORTIFY_SOURCE=2 is set). Force
-    # -D_FORTIFY_SOURCE=0 instead.
-    sed -i 's/-D_FORTIFY_SOURCE=1/-D_FORTIFY_SOURCE=0/g' "${WORK}"/src/configure.in || die 'fortify sed failed'
-
     # if we USE vim-pager, make the manpager.sh script
     if has vim-pager ${MYOPTIONS} && option vim-pager ; then
         cat <<END > "${WORK}"/runtime/macros/manpager.sh
