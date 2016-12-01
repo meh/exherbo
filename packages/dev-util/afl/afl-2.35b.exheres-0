@@ -1,0 +1,29 @@
+# Copyright 2016 Kylie McClain <somasis@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+HOMEPAGE="http://lcamtuf.coredump.cx/afl"
+DOWNLOADS="${HOMEPAGE}/releases/${PNV}.tgz"
+
+SUMMARY="The American fuzzy lop - a security-oriented fuzz testing program"
+SLOT="0"
+LICENCES="Apache-2.0"
+
+PLATFORMS="~amd64"
+
+MYOPTIONS=""
+
+DEPENDENCIES="
+"
+
+DEFAULT_SRC_INSTALL_PARAMS=( PREFIX=/usr EXEC_PREFIX=/usr/$(exhost --target) )
+
+src_prepare() {
+    default
+
+    edo sed -r  \
+        -e '/^(BIN_PATH|HELPER_PATH)/ s/PREFIX/EXEC_PREFIX/'    \
+        -e '/^CFLAGS *\?=/d'    \
+        -e '/^all/ s/ test_build//'    \
+        -i Makefile
+}
+
