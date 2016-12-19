@@ -1,0 +1,31 @@
+# Distributed under the terms of the GNU General Public License v2
+
+require flag-o-matic
+require autotools [ supported_autoconf=[ 2.5 ] supported_automake=[ 1.15 ] ]
+
+SCM_REPOSITORY="https://github.com/saitoha/libsixel"
+require scm-git
+
+SUMMARY="The new standard of SIXEL development"
+HOMEPAGE="http://saitoha.github.com/libsixel"
+
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64 ~x86"
+MYOPTIONS="curl jpeg png
+    ( providers: ijg-jpeg jpeg-turbo ) [[ number-selected = exactly-one ]]
+"
+
+DEPENDENCIES="
+    build+run:
+        curl? ( net-misc/curl )
+        jpeg? (
+            providers:ijg-jpeg? ( media-libs/jpeg )
+            providers:jpeg-turbo? ( media-libs/libjpeg-turbo )
+        )
+        png? ( media-libs/libpng )
+"
+
+DEFAULT_SRC_CONFIGURE_PARAMS=()
+DEFAULT_SRC_CONFIGURE_OPTION_WITHS=( 'curl libcurl' 'jpeg' 'png' )
+DEFAULT_SRC_CONFIGURE_OPTION_ENABLES=()
