@@ -1,0 +1,39 @@
+# Copyright 2008, 2010 Mike Kelly
+# Distributed under the terms of the GNU General Public License v2
+
+SUMMARY="A tool for reducing power usage"
+DESCRIPTION="
+Computer programs can make your computer use more power. PowerTOP is a
+Linux tool that helps you find those programs that are misbehaving while
+your computer is idle.
+"
+HOMEPAGE="https://01.org/powertop"
+DOWNLOADS="https://01.org/sites/default/files/downloads/${PN}/${PNV}.tar.gz"
+
+LICENCES="GPL-2"
+SLOT="0"
+PLATFORMS="~amd64 ~x86"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build:
+        sys-devel/gettext
+        virtual/pkg-config
+    build+run:
+        net-libs/libnl:=
+        sys-apps/pciutils
+        sys-libs/ncurses
+        sys-libs/zlib
+    suggestion:
+        net-wireless/bluez [[ description = [ for disabling inactive bluetooth connections ] ]]
+        net-wireless/wireless_tools [[ description = [ for enabling power-saving wireless settings ] ]]
+        x11-apps/xrandr [[ description = [ for disabling TV output ] ]]
+"
+
+BUGS_TO="pioto@exherbo.org"
+
+src_install() {
+    default
+    keepdir /var/cache/powertop
+}
+
