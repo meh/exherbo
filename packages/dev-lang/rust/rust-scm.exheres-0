@@ -1,6 +1,0 @@
-SCM_BRANCH="master"
-SCM_REPOSITORY="https://github.com/rust-lang/rust"
-
-require scm-git rust [ date="2016-02-17" rev="4d3eebf" hash="d29b7607d13d64078b6324aec82926fb493f59ba" ]
-
-PLATFORMS="~amd64"

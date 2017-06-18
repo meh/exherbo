@@ -1,5 +1,0 @@
-# Distributed under the terms of the GNU General Public License v2
-
-# Get these from src/snapshots.txt
-require rust [ date="2016-02-17" rev="4d3eebf" hash="d29b7607d13d64078b6324aec82926fb493f59ba" ]
-PLATFORMS="~amd64"
