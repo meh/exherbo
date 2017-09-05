@@ -22,6 +22,8 @@ MAKE_PARAMS=(
     ETC_PERFCONFIG=/etc/perfconfig
     DESTDIR="${IMAGE}"/usr/$(exhost --target)
     HOSTCC=$(exhost --tool-prefix)cc
+		HOSTLD=$(exhost --tool-prefix)ld
+		HOSTAR=$(exhost --tool-prefix)ar
     CROSS_COMPILE=$(exhost --tool-prefix)
 )
 
@@ -49,4 +51,3 @@ perf_src_install() {
 }
 
 export_exlib_phases src_install
-
