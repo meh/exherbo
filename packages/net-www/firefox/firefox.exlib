@@ -1,0 +1,259 @@
+# Copyright 2007-2008 Alexander Færøy <eroyf@exherbo.org>
+# Copyright 2008 Bernd Steinhauser <berniyh@exherbo.org>
+# Copyright 2008, 2009 Ingmar Vanhassel <ingmar@exherbo.org>
+# Copyright 2011 Brett Witherspoon <spoonb@exherbo.org>
+# Copyright 2011, 2012, 2015 Wouter van Kesteren <woutershep@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+MY_PV="${MY_PV:-${PV/_beta/b}}"
+MY_PV="${MY_PV/_rc/rc}"
+MY_PV="${MY_PV}esr"
+
+WORK="${WORKBASE}/${PN}-${MY_PV}"
+
+# /mozilla-*/browser/branding/unofficial/locales/en-US/brand.properties
+MOZ_CODENAME="Mozilla Developer Preview"
+
+linguas=(
+    ach af an ar as ast az bg bn_BD bn_IN br bs ca cak cs cy da de dsb el en_GB en_US en_ZA eo
+    es_AR es_CL es_ES es_MX et eu fa ff fi fr fy_NL ga_IE gd gl gn gu_IN he hi_IN hr hsb hu hy_AM
+    id is it ja ka kab kk km kn ko lij lt lv mai mk ml mr ms my nb_NO nl nn_NO or pa_IN pl pt_BR
+    pt_PT rm ro ru si sk sl son sq sr sv_SE ta te th tr uk ur uz vi xh zh_CN zh_TW
+)
+
+# autoconf:2.5 doesn't work - https://bugzilla.mozilla.org/show_bug.cgi?id=104642
+require autotools [ supported_autoconf=[ 2.1 ] supported_automake=[ 1.15 ] ]
+require mozilla-pgo [ co_project=browser codename="${MOZ_CODENAME}" ]
+require freedesktop-desktop
+require toolchain-funcs
+
+export_exlib_phases src_unpack src_prepare src_configure src_install
+
+SUMMARY="Mozilla's standalone web browser"
+HOMEPAGE="http://www.mozilla.com/en-US/${PN}"
+DOWNLOADS="
+    https://ftp.mozilla.org/pub/mozilla.org/${PN}/releases/${MY_PV}/source/${PN}-${MY_PV}.source.tar.xz
+"
+for lang in "${linguas[@]}" ; do
+    DOWNLOADS+="
+        linguas:${lang}? ( https://ftp.mozilla.org/pub/${PN}/releases/${MY_PV}/linux-i686/xpi/${lang/_/-}.xpi -> ${PN}-${MY_PV}-${lang}.xpi )
+    "
+done
+
+UPSTREAM_RELEASE_NOTES="${HOMEPAGE}/${MY_PV}/releasenotes"
+
+LICENCES="
+    || ( MPL-1.1 MPL-2.0 GPL-2 GPL-3 LGPL-2.1 LGPL-3 )
+"
+SLOT="0"
+MYOPTIONS="
+    alsa dbus
+    eme       [[ description = [ Enable Encrypted Media Extensions, a form of DRM used for sites like Netflix ] ]]
+    gconf     [[ description = [ Use GConf for various preferences such as proxy, url-handlers, etc ] ]]
+    jack      [[ description = [ Enable JACK backend ] ]]
+    libproxy  [[ description = [ Use libproxy for system proxy settings ] ]]
+    pulseaudio
+    startup-notification [[ description = [ Enables user and system feedback during startup ] ]]
+
+    ( libc: musl )
+    ( linguas: ${linguas[@]} )
+    ( providers: jpeg-turbo )
+"
+
+DEPENDENCIES="
+    build:
+        app-arch/zip
+        dev-lang/perl:*[>=5.6]
+        dev-lang/python:2.7[sqlite]
+        dev-lang/yasm[>=1.3]
+        dev-python/pip[python_abis:2.7]
+        virtual/pkg-config[>=0.9.0]
+        virtual/unzip
+    build+run:
+        app-spell/hunspell:=
+        dev-lang/rust:*[>=1.17]
+        dev-libs/atk
+        dev-libs/glib:2[>=2.26]
+        dev-libs/icu:=[>=58.1]
+        dev-libs/libIDL:2[>=0.8.0]
+        dev-libs/libevent:=
+        dev-libs/libffi[>=3.0.10]
+        dev-libs/nspr[>=4.14]
+        dev-libs/nss[>=3.30.2]
+        media-libs/fontconfig[>=2.7.0]
+        media-libs/freetype:2[>=2.1.0]
+        media-libs/libvpx[>=1.5.0]
+        x11-dri/mesa
+        x11-libs/cairo[>=1.10.2-r1][X] [[ note = [ required for tee backend ] ]]
+        x11-libs/gdk-pixbuf:2.0
+        x11-libs/gtk+:2[>=2.18]
+        x11-libs/gtk+:3[>=3.4.0]
+        x11-libs/libICE
+        x11-libs/libX11
+        x11-libs/libxcb
+        x11-libs/libXcomposite
+        x11-libs/libXdamage
+        x11-libs/libXext
+        x11-libs/libXfixes
+        x11-libs/libXrender
+        x11-libs/libXt
+        x11-libs/pango[>=1.22.0]
+        x11-libs/pixman:1[>=0.19.2]
+        alsa? (
+            sys-sound/alsa-lib
+        )
+        dbus? ( sys-apps/dbus[>=0.60]
+                dev-libs/dbus-glib:1[>=0.60] )
+        gconf? ( gnome-platform/GConf:2[>=1.2.1] )
+        jack? ( media-sound/jack-audio-connection-kit )
+        libproxy? ( net-libs/libproxy:1[-webkit] ) [[ note = [ can't mix gtk3 and gtk2 symbols ] ]]
+        providers:jpeg-turbo? ( media-libs/libjpeg-turbo )
+        pulseaudio? ( media-sound/pulseaudio )
+        startup-notification? ( x11-libs/startup-notification[>=0.8] )
+    suggestion:
+        x11-libs/libnotify[>=0.4] [[ description = [ Show notifications with libnotify ] ]]
+"
+
+# Do not use system sqlite since it requires secure_delete to be enabled by default.
+# This incurs a preformance penalty for zeroing data on delete.
+# There is a patch to make xulrunner do a PRAGMA secure_delete = ON;
+# at runtime to avoid the overhead on other programs. But upstream rejected it.
+# see: https://bugzilla.mozilla.org/show_bug.cgi?id=546162 and
+# https://bugzil.la/1049920
+#
+# If we decide to accept this penalty or decide
+# to use the unsupported patch then we will also need:
+#
+# threadsafe: already enabled in the exheres
+# unlock-notify: already an option in the exheres
+# fts3: seems to be enabled by default (-DSQLITE_ENABLE_FTS3 in Makefile.am)
+#       documentation however claims that it is disabled by default...
+
+MOZILLA_SRC_CONFIGURE_PARAMS=(
+    --disable-crashreporter
+    # Currently fails to build (48.0)
+    --disable-elf-hack
+    --disable-gnomeui
+    --disable-necko-wifi
+    --disable-shared-js # https://bugzil.la/1112945
+    --disable-synth-speechd # seems dependencyless but dlopens libspeechd.so.2
+    --disable-system-sqlite
+    --disable-updater
+    --disable-warnings-as-errors
+    --enable-chrome-format=omni
+    --enable-default-toolkit=cairo-gtk2
+    --enable-gio
+    --enable-sandbox
+    --enable-system-ffi
+    --enable-system-hunspell
+    --enable-system-pixman
+    --enable-webrtc
+    --with-intl-api
+    --with-system-bz2
+    --with-system-cairo
+    --with-system-icu
+    --with-system-libevent
+    --with-system-libvpx
+    --with-system-zlib
+    --without-system-png # Requires patches for APNG support, which we will not support
+)
+
+MOZILLA_SRC_CONFIGURE_OPTIONS=(
+    'libc:musl --disable-jemalloc --enable-jemalloc'
+)
+
+MOZILLA_SRC_CONFIGURE_OPTION_ENABLES=(
+    alsa
+    dbus
+    eme
+    gconf
+    jack
+    libproxy
+    pulseaudio
+    startup-notification
+)
+MOZILLA_SRC_CONFIGURE_OPTION_WITHS=(
+    # --with-system-jpeg needs libjpeg-turbo or whatever provides JCS_EXTENSIONS
+    'providers:jpeg-turbo system-jpeg'
+)
+
+firefox_src_unpack() {
+    default
+
+    for lang in "${linguas[@]}" ; do
+        if option linguas:${lang} ; then
+            edo mkdir "${WORKBASE}"/${lang}
+            edo unzip -qo "${FETCHEDDIR}"/${PN}-${MY_PV}-${lang}.xpi -d "${WORKBASE}"/${lang}
+        fi
+    done
+}
+
+old-eautoreconf() {
+    local backup=( configure{,.in} )
+    edo mv "${backup[@]}" "${TEMP}"
+    edo cp {old-,}configure.in
+    eautoreconf
+    edo mv {,old-}configure
+    edo mv "${backup[@]/#/${TEMP}/}" .
+}
+
+firefox_src_prepare() {
+    mozilla-pgo_src_prepare
+
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1332788
+    # pgo leads to weird font rendering, the following works around it.
+    # pretty wide, but just 'graphite2+harfbuzz', 'skia', 'thebes' doesnt work.
+    # ive rebuild it enough im fed up, for now just un-pgo the entire gfx system.
+    local mozbuild
+    for mozbuild in $(find gfx -name moz.build); do
+        echo "echo 'NO_PGO = True' >> $mozbuild" 1>&2
+        echo 'NO_PGO = True' >> $mozbuild || die "Failed to append NO_PGO"
+    done
+
+    # Upstream comment out the parts of Cargo.toml that make it work
+    # but recent cargo autodetect and try to use this file
+    edo rm media/libstagefright/binding/mp4parse_capi/build.rs
+
+    # untill fully switched to the new python build system
+    old-eautoreconf
+    edo pushd js/src >/dev/null
+    old-eautoreconf
+    edo popd >/dev/null
+}
+
+firefox_src_configure() {
+    # NOTE(somasis): fix library loading on musl
+    # NOTE(woutershep): do not apply to glibc, breaks PGO.
+    # also firefox 45.0 had rpath changes, this might be obsolete?
+    libc-is-musl && append-flags "-Wl,-rpath=/usr/$(exhost --target)/lib/${PN}"
+
+    mozilla-pgo_src_configure
+}
+
+firefox_src_install() {
+    mozilla-pgo_src_install
+
+    # some resources (ex: jsloader, jssubloader) are put into ommi-jar so the directory is empty
+    edo find "${IMAGE}" -type d -empty -delete
+
+    edo hereenvd 50firefox <<EOF
+COLON_SEPARATED="MOZ_PLUGIN_PATH"
+MOZ_PLUGIN_PATH="/usr/$(exhost --target)/lib/nsbrowser/plugins:/opt/nsbrowser/plugins"
+EOF
+
+    # allow installation of distributed extensions and read/use system locale on runtime
+    insinto /usr/$(exhost --target)/lib/${PN}/browser/defaults/preferences
+    hereins all-exherbo.js <<EOF
+pref("extensions.autoDisableScopes", 3);
+pref("intl.locale.matchOS", true);
+EOF
+
+    for lang in "${linguas[@]}" ; do
+        if option linguas:${lang} ; then
+            emid="$(sed -n -e '/install-manifest/,$ { /em:id/!d; s/.*[\">]\([^\"<>]*\)[\"<].*/\1/; p; q }' "${WORKBASE}"/${lang}/install.rdf)"
+            insinto /usr/$(exhost --target)/lib/${PN}/browser/extensions/${emid}
+            doins -r "${WORKBASE}"/${lang}/*
+        fi
+    done
+}
+

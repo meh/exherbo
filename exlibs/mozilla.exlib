@@ -1,0 +1,196 @@
+# Copyright 2008 Bernd Steinhauser <berniyh@exherbo.org>
+# Copyright 2011, 2012 Wouter van Kesteren <woutershep@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require flag-o-matic
+
+# Mozilla checkout project
+myexparam co_project
+
+# Provide "debug" option and common implementation
+myexparam -b provide_debug=true
+
+# nspr and nss versions. Values should be standard exheres version specs
+# enclosed in double quotes (e.g. "[>=4.8]", "[=3.12.3]"). If unspecified, the
+# latest available versions will be used.
+myexparam supported_nspr=
+myexparam supported_nss=
+myexparam xulrunner_dir=xulrunner
+
+exparam -v MOZ_CO_PROJECT co_project
+exparam -v supported_nspr supported_nspr
+exparam -v supported_nss supported_nss
+exparam -v xulrunner_dir xulrunner_dir
+
+exparam -b provide_debug && MYOPTIONS+=" debug"
+
+# When importing this exlib you can specify that the source can be build with
+# unofficial branding to allow binary distribution. In that case specify
+# provide_bindist=true and upstream's release codename. The codename
+# replaces the official branding in the UI when the bindist option is enabled.
+# Consult the "Codename" column here:
+#     http://en.wikipedia.org/wiki/Firefox#Release_history
+# More on Firefox trademark issues:
+#     http://en.wikipedia.org/wiki/Firefox#Trademark_and_logo
+myexparam -b provide_bindist=false
+if exparam -b provide_bindist ; then
+    myexparam codename
+
+    exparam -v codename codename
+
+    require freedesktop-desktop
+
+    MYOPTIONS+="
+        bindist [[ description = [ Disable official branding, allowing binary redistribution ] ]]
+    "
+fi
+
+export_exlib_phases src_unpack src_prepare src_configure src_compile src_install
+
+DEPENDENCIES="
+    build+run:
+        dev-libs/nspr${supported_nspr}
+        dev-libs/nss${supported_nss}
+"
+
+WORK="${WORKBASE}"/build/${MOZ_CO_PROJECT}
+
+mozilla_src_unpack() {
+    default
+    edo mkdir -p "${WORK}"
+}
+
+mozilla_src_prepare() {
+    default
+
+    # Thunderbird places this file differently than firefox as of 38
+    if [[ ${PN} == thunderbird ]] ; then
+        myfile="${ECONF_SOURCE}"/mozilla/config/autoconf.mk.in
+    else
+        myfile="${ECONF_SOURCE}"/config/autoconf.mk.in
+    fi
+
+    edo sed \
+        -e "/^installdir/ c installdir = /usr/$(exhost --target)/lib/${PN}" \
+        -e "/^includedir/ c includedir = /usr/include/${PN}" \
+        -e "/^idldir/ c idldir = /usr/share/idl/${PN}" \
+        -e "/^sdkdir/ c sdkdir = /usr/$(exhost --target)/lib/${PN}-devel" \
+        -i ${myfile}
+    edo sed \
+        -e "s!/stable!!" \
+        -i "${ECONF_SOURCE}"/${xulrunner_dir}/installer/mozilla-plugin.pc.in
+}
+
+mozilla_src_configure() {
+    illegal_in_global_scope
+
+    # thunderbird-31* wants a mozconfig file, so give it one:
+    if  [[ ${PN} == thunderbird ]] && ever at_least 31; then
+        edo touch "${WORK}"/.mozconfig
+        export MOZCONFIG="${WORK}"/.mozconfig
+        export MOZ_OBJDIR="${WORK}"
+    else
+        export MOZ_OBJDIR=@TOPSRCDIR@/../build
+    fi
+
+    export PKG_SKIP_STRIP=1
+    export MOZ_CO_PROJECT
+
+    local x param_optimize
+
+    # Exporting this solves the probleamtic search bar and enables the missing healthreport page
+    export MOZ_SERVICES_HEALTHREPORT=1
+
+    # Override the default optimization levels of Mozilla projects with the
+    # value specified by -O from the user's CFLAGS/CXXFLAGS (if -O isn't given
+    # gcc defaults to '-O0'). Optimization must be disabled when the 'debug'
+    # option is set.
+    if exparam -b provide_debug && option debug ; then
+        param_optimize="--disable-optimize"
+    else
+        for x in ${CFLAGS}; do
+            case ${x} in
+                -O)  param_optimize="--enable-optimize=-O1"  ;;
+                -O*) param_optimize="--enable-optimize=${x}" ;;
+            esac
+        done
+        [[ -z ${param_optimize} ]] && param_optimize="--enable-optimize=-O0"
+    fi
+
+    # Now filter -O from CFLAGS/CXXFLAGS to avoid a duplicate in the resulting
+    # compile string.
+    filter-flags '-O*'
+
+    local param_debug
+    if exparam -b provide_debug; then
+        param_debug="
+            $(option_enable debug)
+            $(option_enable debug tests)
+        "
+    else
+        param_debug="--disable-debug --disable-tests"
+    fi
+
+    local -a param_bindist
+    if exparam -b provide_bindist; then
+        param_bindist=( $(option_enable !bindist official-branding) )
+        if option bindist; then
+            # don't use --without-branding because it will result in an error
+            param_bindist+=( --with-branding=${MOZ_CO_PROJECT}/branding/unofficial )
+        else
+            export BUILD_OFFICIAL=1 MOZILLA_OFFICIAL=1
+        fi
+    fi
+
+    econf \
+        "${MOZILLA_SRC_CONFIGURE_PARAMS[@]}" \
+        $(for s in "${MOZILLA_SRC_CONFIGURE_OPTIONS[@]}" ; do
+            option ${s}
+        done) \
+        $(for s in "${MOZILLA_SRC_CONFIGURE_OPTION_ENABLES[@]}" ; do
+            option_enable ${s}
+        done) \
+        $(for s in "${MOZILLA_SRC_CONFIGURE_OPTION_WITHS[@]}" ; do
+            option_with ${s}
+        done) \
+        --disable-debug-symbols \
+        --disable-strip \
+        --enable-application=${MOZ_CO_PROJECT} \
+        ${param_debug} \
+        "${param_bindist[@]}" \
+        ${param_optimize} \
+        --with-default-mozilla-five-home=/usr/$(exhost --target)/lib/${PN} \
+        --with-distribution-id=org.exherbo \
+        --with-system-nspr \
+        --with-system-nss
+}
+
+mozilla_src_compile() {
+    emake TOOLCHAIN_PREFIX=$(exhost --tool-prefix) "${DEFAULT_SRC_COMPILE_PARAMS[@]}"
+}
+
+mozilla_src_install() {
+    default
+
+    if exparam -b provide_bindist ; then
+        insinto /usr/share/applications
+        doins "${FILES}"/${PN}.desktop
+
+        local icondir
+
+        if option bindist ; then
+            edo sed -e "/^Name=/ c Name=${codename}" \
+                    -i "${IMAGE}"/usr/share/applications/${PN}.desktop
+            icondir="${MOZ_CO_PROJECT}"/branding/unofficial
+        else
+            case "${PN}" in
+                firefox) icondir="${MOZ_CO_PROJECT}"/branding/official ;;
+                *)       icondir=other-licenses/branding/${PN}         ;;
+            esac
+        fi
+
+        insinto /usr/share/pixmaps
+        newins "${ECONF_SOURCE}"/"${icondir}"/content/icon64.png ${PN}-icon.png
+    fi
+}
+

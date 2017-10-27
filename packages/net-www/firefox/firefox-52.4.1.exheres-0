@@ -1,0 +1,19 @@
+# Copyright 2007-2008 Alexander Færøy <eroyf@exherbo.org>
+# Copyright 2008 Bernd Steinhauser <berniyh@exherbo.org>
+# Copyright 2008 Ingmar Vanhassel <ingmar@exherbo.org>
+# Copyright 2009 Xavier Barrachina <xabarci@ega.upv.es>
+# Copyright 2010 Cecil Curry <leycec@gmail.com>
+# Copyright 2012 Wouter van Kesteren <woutershep@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require firefox
+
+PLATFORMS="~amd64 ~x86"
+
+DEFAULT_SRC_PREPARE_PATCHES=(
+    --fuzz=3
+    "${FILES}"/xulrunner-29.0-install-dir.patch
+    --fuzz=2
+    "${FILES}"/bug1332788.patch
+)
+

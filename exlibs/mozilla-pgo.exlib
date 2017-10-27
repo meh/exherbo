@@ -1,0 +1,166 @@
+# Copyright 2008 Bernd Steinhauser <berniyh@exherbo.org>
+# Copyright 2011, 2012, 2015 Wouter van Kesteren <woutershep@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require flag-o-matic freedesktop-desktop xdummy [ phase=build option=pgo ]
+
+myexparam co_project
+exparam -v co_project co_project
+
+myexparam xulrunner_dir=xulrunner
+exparam -v xulrunner_dir xulrunner_dir
+
+# This exparam allows you to specify that the source will be built with
+# unofficial branding to allow binary distribution. The codename replaces
+# the official branding in the UI when the bindist option is enabled.
+# Consult the "Codename" column here: http://en.wikipedia.org/wiki/Firefox#Release_history
+# More on Firefox trademark issues: http://en.wikipedia.org/wiki/Firefox#Trademark_and_logo
+myexparam codename
+exparam -v codename codename
+
+export_exlib_phases src_prepare src_configure src_compile src_install
+
+MYOPTIONS="
+    bindist [[ description = [ Disable official branding, allowing binary redistribution ] ]]
+    (
+        debug [[ description = [ Disables optimization, enables assertions and other debug-only code ] ]]
+        pgo   [[ description = [ Do a second build after profiling to increase runtime performance ] ]]
+    ) [[
+        number-selected = at-most-one
+        note = [ at-most-one because I felt it wasn't worth my time to figure out if it
+                 was possible to build some kind of weird unoptimized-optimized monster.
+                 It doesn't make much sense if you ask me, but patches are welcome. ]
+    ]]
+"
+
+mozilla-pgo_src_prepare() {
+    default
+
+    edo sed \
+        -e "/^includedir/ c includedir = /usr/$(exhost --target)/include/${PN}" \
+        -e "/^idldir/ c idldir = /usr/share/idl/${PN}" \
+        -e "/^installdir/ c installdir = /usr/$(exhost --target)/lib/${PN}" \
+        -e "/^sdkdir/ c sdkdir = /usr/$(exhost --target)/lib/${PN}-devel" \
+        -i config/baseconfig.mk
+}
+
+mozilla-pgo_src_configure() {
+    local x
+
+    # Needed to compile in a chroot environment
+    export SHELL=/bin/bash
+
+    local MOZILLA_AC_OPTIONS=(
+        # econf can't be used because mozilla's build system is running the ./configure for us.
+        # As a result we need to duplicate exherbo's defaults otherwise set by econf.
+        # Removed from these defaults are datarootdir and docdir because they where --hates.
+        --prefix=/usr/$(exhost --target)
+
+        --disable-debug-symbols
+        --disable-strip
+        --enable-application="${co_project}"
+        --with-distribution-id=org.exherbo
+        --with-system-nspr
+        --with-system-nss
+        $(option_enable debug)
+        $(option_enable pgo tests)
+    )
+
+    local MOZILLA_MK_OPTIONS=(
+        MOZ_CO_PROJECT="${co_project}"
+        MOZ_MAKE_FLAGS="-j${EXJOBS}"
+        MOZ_OBJDIR=${WORKBASE}/build
+        MOZ_SERVICES_HEALTHREPORT=1 # fix search bar and enables the missing healthreport page
+        PKG_SKIP_STRIP=1
+        TOOLCHAIN_PREFIX=$(exhost --tool-prefix)
+    )
+
+    # Override the default optimization levels of Mozilla projects with the
+    # value specified by -O from the user's CFLAGS/CXXFLAGS (if -O isn't given
+    # gcc defaults to '-O0'). Optimization must be disabled when the 'debug'
+    # option is set. tests must be enabled for profiling against.
+    if option debug; then
+        MOZILLA_AC_OPTIONS+=( --enable-debug --disable-optimize --enable-tests )
+    else
+        local param_optimize
+        for x in ${CFLAGS}; do
+            case ${x} in
+                -O)  param_optimize="--enable-optimize=-O1"  ;;
+                -O*) param_optimize="--enable-optimize=${x}" ;;
+            esac
+        done
+        [[ -z ${param_optimize} ]] && param_optimize="--enable-optimize=-O0"
+        MOZILLA_AC_OPTIONS+=( --disable-debug "${param_optimize}" $(option_enable pgo tests) )
+    fi
+
+    if option bindist; then
+        MOZILLA_AC_OPTIONS+=(
+            --disable-official-branding
+            # don't use --without-branding because it will result in an error
+            --with-branding="${co_project}"/branding/unofficial
+        )
+    else
+        MOZILLA_AC_OPTIONS+=( --enable-official-branding )
+        MOZILLA_MK_OPTIONS+=( BUILD_OFFICIAL=1 MOZILLA_OFFICIAL=1 )
+    fi
+
+    # do this last so exhereses can override any above options
+    MOZILLA_AC_OPTIONS+=(
+        "${MOZILLA_SRC_CONFIGURE_PARAMS[@]}"
+        $(for s in "${MOZILLA_SRC_CONFIGURE_OPTIONS[@]}"; do
+            option ${s}
+        done)
+        $(for s in "${MOZILLA_SRC_CONFIGURE_OPTION_ENABLES[@]}"; do
+            option_enable ${s}
+        done)
+        $(for s in "${MOZILLA_SRC_CONFIGURE_OPTION_WITHS[@]}"; do
+            option_with ${s}
+        done)
+    )
+
+    for x in "${MOZILLA_AC_OPTIONS[@]}"; do
+        edo echo ac_add_options "${x}" >> mozconfig
+    done
+
+    for x in "${MOZILLA_MK_OPTIONS[@]}"; do
+        edo echo "export         ${x}" >> mozconfig
+        edo echo "mk_add_options ${x}" >> mozconfig
+    done
+}
+
+mozilla-pgo_src_compile() {
+    if option pgo; then
+        xdummy_start
+        nonfatal emake -j1 -f client.mk profiledbuild
+        local ret=${?}
+        xdummy_stop
+        [[ ${ret} == 0 ]] || die "emake returned error ${ret}"
+    else
+        emake -j1 -f client.mk build
+    fi
+}
+
+mozilla-pgo_src_install() {
+    emake -j1 -f client.mk DESTDIR="${IMAGE}" install
+    emagicdocs
+
+    insinto /usr/share/applications
+    doins "${FILES}"/${PN}.desktop
+
+    local icondir
+
+    if option bindist ; then
+        edo sed -e "/^Name=/ c Name=${codename}" \
+                -i "${IMAGE}"/usr/share/applications/${PN}.desktop
+        icondir="${co_project}"/branding/unofficial
+    else
+        case "${PN}" in
+            firefox) icondir="${co_project}"/branding/official ;;
+            *)       icondir=other-licenses/branding/${PN}     ;;
+        esac
+    fi
+
+    insinto /usr/share/pixmaps
+    newins "${icondir}"/content/icon64.png ${PN}-icon.png
+}
+
