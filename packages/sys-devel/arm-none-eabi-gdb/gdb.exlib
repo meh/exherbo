@@ -1,0 +1,106 @@
+# Copyright 2008 Bo Ørsted Andresen
+# Distributed under the terms of the GNU General Public License v2
+# Based in part upon 'gdb-6.7.1.ebuild' from Gentoo, which is:
+#     Copyright 1999-2007 Gentoo Foundation
+
+export_exlib_phases src_test_expensive src_install
+
+MY_PN=gdb
+MY_PNV=${MY_PN}-${PV}
+
+WORK="${WORKBASE}"/${MY_PNV}
+
+SUMMARY="The GNU Project Debugger"
+HOMEPAGE="https://sourceware.org/${MY_PN}"
+DOWNLOADS="mirror://sourceware/${MY_PN}/releases/${MY_PNV}.tar.xz"
+
+REMOTE_IDS="freecode:${MY_PN}"
+
+UPSTREAM_DOCUMENTATION="${HOMEPAGE}/documentation/ [[ lang = en ]]"
+UPSTREAM_RELEASE_NOTES="${HOMEPAGE}/download/ANNOUNCEMENT [[ lang = en ]]"
+
+LICENCES="GPL-3 LGPL-3"
+SLOT="0"
+MYOPTIONS="
+    guile [[ description = [ Extend gdb with guile, an implementation of the Scheme language ] ]]
+    python
+    ( linguas:
+        da de es fi fr ga id it ja nl pt_BR ro ru rw sv tr uk vi zh_CN
+    )
+"
+
+RESTRICT="test"
+
+DEPENDENCIES="
+    build:
+        sys-devel/gettext
+    test-expensive:
+        dev-util/dejagnu
+    build+run:
+        dev-libs/expat
+        dev-libs/gmp:=[>=4.3.2]
+        dev-libs/mpc:=[>=0.8.1]
+        dev-libs/mpfr:=[>=2.4.2]
+        sys-libs/ncurses[>=5.2]
+        sys-libs/readline:=
+        guile? ( dev-lang/guile:=[>=2.0] )
+        python? ( dev-lang/python:= )
+        !sys-devel/binutils[<=2.25] [[
+            description = [ gdb and binutils both installed libbfd and libiberty ]
+            resolution = upgrade-blocked-before
+        ]]
+"
+
+DEFAULT_SRC_CONFIGURE_OPTION_WITHS=(
+    guile
+    python
+)
+DEFAULT_SRC_CONFIGURE_PARAMS=(
+    --target=arm-none-eabi
+    --prefix=/usr
+    --exec-prefix=/usr/$(exhost --target)
+    --includedir=/usr/$(exhost --target)/include
+    --enable-nls
+    --enable-tui
+    --disable-gold
+    --disable-werror
+    --with-curses
+    --with-expat
+    --with-system-readline
+    --with-system-zlib
+    # These are already installed by binutils:
+    --disable-install-libbfd
+    --disable-install-libiberty
+)
+
+# People reported parallel build failures ( 7.9.1 )
+DEFAULT_SRC_COMPILE_PARAMS=( -j1 )
+
+DEFAULT_SRC_INSTALL_EXTRA_SUBDIRS=( gdb sim )
+DEFAULT_SRC_INSTALL_EXTRA_DOCS=( CONTRIBUTE )
+
+gdb_src_test_expensive() {
+    if [[ -n "${PALUDIS_DO_NOTHING_SANDBOXY}" ]]; then
+        # make --dry-run check fails
+        emake check
+    else
+        elog "Not running tests because gdb doesn't work under sydbox"
+        elog "set PALUDIS_DO_NOTHING_SANDBOXY=1 if you want to run the tests"
+    fi
+}
+
+gdb_src_install() {
+    default
+
+    # sys-devel/binutils installs opcodes.mo, bfd.mo and bfd.info
+    edo find "${IMAGE}" -name opcodes.mo -delete
+    edo find "${IMAGE}" -name bfd.mo -delete
+    edo find "${IMAGE}" -name bfd.info -delete
+
+    edo find "${IMAGE}" -depth -type d -empty -delete
+
+    # remove parts in common with gdb
+    edo rm -r "${IMAGE}"/usr/share/{doc,gdb,info}
+    edo rm -r "${IMAGE}"/usr/$(exhost --target)/include
+}
+
